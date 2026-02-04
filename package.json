@@ -1,0 +1,36 @@
+{
+  "name": "demo-publish-action",
+  "private": true,
+  "type": "module",
+  "module": "src/publish.ts",
+  "scripts": {
+    "lint": "oxfmt --check . && oxlint . && tsc --noEmit",
+    "format": "oxfmt ."
+  },
+  "dependencies": {
+    "@actions/core": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/bun": "1.3.8",
+    "@types/node": "^25.2.0",
+    "msw": "^2.12.8",
+    "oxfmt": "^0.28.0",
+    "oxlint": "^1.43.0",
+    "typescript": "^5.9.3"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "bun",
+      "onFail": "error",
+      "version": ">=1.3.8"
+    },
+    "runtime": {
+      "name": "bun",
+      "version": ">=1.3.8",
+      "onFail": "error"
+    }
+  },
+  "engines": {
+    "bun": ">=1.3.8"
+  }
+}

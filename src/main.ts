@@ -54,7 +54,7 @@ async function main(): Promise<void> {
 
   if (isPublished) {
     console.log(
-      `Tile '${tileFullName}@${tileVersion}' has already been published. Skipping publish step`,
+      `${tileFullName}@${tileVersion} has already been published. Skipping publish step`,
     );
     return;
   }
@@ -67,10 +67,10 @@ async function main(): Promise<void> {
   const archiveBytes = await createArchive(path);
   console.log(`Archive created (${archiveBytes.length} bytes)`);
 
-  console.log('Publishing to Tessl API...');
+  console.log('Publishing...');
   const oidcToken = await getIDToken('api.tessl.io');
   await publish(archiveBytes, apiToken, oidcToken);
-  console.log('Publish complete');
+  console.log(`Successfully published ${tileFullName}@${tileVersion}`);
 }
 
 main().catch((error: unknown) => {

@@ -21,6 +21,4 @@ export async function publish(
       `API request failed: ${response.status} ${response.statusText}${EOL}${body}`,
     );
   }
-
-  console.log('Successfully published tiles to Tessl API');
 }

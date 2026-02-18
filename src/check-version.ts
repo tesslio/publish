@@ -20,6 +20,11 @@ export async function isPublishedVersion(
     { params: { path: { workspaceName, tileName } } },
   );
 
+  if (tileVersionsResponse.response.status === 404) {
+    // Tile doesn't exist, so version can't have been published
+    return false;
+  }
+
   if ('error' in tileVersionsResponse) {
     const err = tileVersionsResponse.error?.errors[0]!;
     throw new Error(

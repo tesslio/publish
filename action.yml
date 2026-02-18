@@ -10,7 +10,7 @@ runs:
   using: 'composite'
   steps:
     - uses: oven-sh/setup-bun@v2
-    - run: bun install
+    - run: bun install --production --frozen-lockfile
       shell: bash
       working-directory: ${{ github.action_path }}
     - run: bun ${{ github.action_path }}/src/main.ts "${{ inputs.path }}"

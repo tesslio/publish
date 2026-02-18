@@ -156,21 +156,19 @@ describe('isPublishedVersion', () => {
           {
             errors: [
               {
-                title: 'Not Found',
-                status: '404',
-                detail: 'Tile does not exist',
+                title: 'Internal Server Error',
+                status: '500',
+                detail: 'Something went wrong',
               },
             ],
           },
-          { status: 404 },
+          { status: 500 },
         ),
       ),
     );
 
     await expect(
       isPublishedVersion('my-workspace/my-tile', '1.0.0', 'token'),
-    ).rejects.toThrow(
-      'Failed to fetch existing tile versions: Not Found Tile does not exist',
-    );
+    ).rejects.toThrow('[500 Internal Server Error]: Something went wrong');
   });
 });

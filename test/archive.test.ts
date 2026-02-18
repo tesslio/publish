@@ -23,7 +23,7 @@ test('createArchive returns bytes for directory with matching files', async () =
 test('createArchive throws when no matching files found', async () => {
   const tempDir = await mkdtemp(join(tmpdir(), 'archive-test-'));
   try {
-    await Bun.write(join(tempDir, 'ignored.json'), '{}');
+    await Bun.write(join(tempDir, 'ignored.xml'), '<root/>');
 
     await expect(createArchive(tempDir)).rejects.toThrow('No files found');
   } finally {

@@ -18,3 +18,19 @@ export function createTesslClient(opts?: { accessToken?: string }) {
 
   return client;
 }
+
+export function formatError(error: {
+  errors: {
+    title: string;
+    status: string;
+    detail: string;
+  }[];
+}) {
+  const err = error.errors[0];
+
+  if (!err) {
+    return 'Unknown error';
+  }
+
+  return `[${err.status} ${err.title}]: ${err.detail}`;
+}

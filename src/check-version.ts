@@ -1,4 +1,4 @@
-import { createTesslClient } from './client';
+import { createTesslClient, formatError } from './client';
 
 export async function isPublishedVersion(
   tileFullName: string,
@@ -25,11 +25,8 @@ export async function isPublishedVersion(
     return false;
   }
 
-  if ('error' in tileVersionsResponse) {
-    const err = tileVersionsResponse.error?.errors[0]!;
-    throw new Error(
-      `Failed to fetch existing tile versions: ${err.title} ${err.detail}`,
-    );
+  if (tileVersionsResponse.error) {
+    throw new Error(formatError(tileVersionsResponse.error));
   }
 
   const existingVersions = tileVersionsResponse.data.data.map(

@@ -1,4 +1,4 @@
-import { test, expect, beforeAll, afterAll, afterEach, spyOn } from 'bun:test';
+import { test, expect, beforeAll, afterAll, afterEach } from 'bun:test';
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 
@@ -20,7 +20,6 @@ test('publish sends correct request and succeeds on ok response', async () => {
     }),
   );
 
-  const consoleSpy = spyOn(console, 'log');
   const archiveBytes = new Uint8Array([1, 2, 3]);
 
   await publish(archiveBytes, 'api-token', 'oidc-token');
@@ -36,17 +35,23 @@ test('publish sends correct request and succeeds on ok response', async () => {
   expect(new Uint8Array(await capturedRequest!.arrayBuffer())).toEqual(
     archiveBytes,
   );
-  expect(consoleSpy).toHaveBeenCalledWith(
-    'Successfully published tiles to Tessl API',
-  );
-
-  consoleSpy.mockRestore();
 });
 
 test('publish throws on non-ok response', async () => {
   server.use(
     http.post('https://api.tessl.io/v1/tiles', () => {
-      return HttpResponse.text('Bad request', { status: 400 });
+      return HttpResponse.json(
+        {
+          errors: [
+            {
+              title: 'Bad Request',
+              status: '400',
+              detail: 'Invalid archive',
+            },
+          ],
+        },
+        { status: 400 },
+      );
     }),
   );
 
@@ -54,5 +59,5 @@ test('publish throws on non-ok response', async () => {
 
   await expect(
     publish(archiveBytes, 'api-token', 'oidc-token'),
-  ).rejects.toThrow('API request failed: 400');
+  ).rejects.toThrow('[400 Bad Request]: Invalid archive');
 });

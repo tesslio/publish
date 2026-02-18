@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 export async function createArchive(path: string): Promise<Uint8Array> {
   const files: Record<string, Uint8Array> = {};
-  const glob = new Glob('**/*.{md,js,py,sh,txt,json}');
+  const glob = new Glob('**/*.{md,js,py,sh,txt,json,ps1}');
 
   for await (const filePath of glob.scan({
     cwd: path,

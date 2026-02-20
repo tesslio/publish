@@ -15,10 +15,9 @@ permissions:
   contents: read # Required to checkout the repository
 
 on:
-  pull_request:
   push:
     branches:
-      - main
+      - main # Trigger on push / merge to main
 
 jobs:
   publish:

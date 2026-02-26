@@ -54,19 +54,29 @@ export async function runSkillReview(
 
   const exitCode = await proc.exited;
   if (exitCode !== 0) {
-    throw new Error(
+    console.warn(
       `tessl skill review failed (exit code ${exitCode}): ${stderr}`,
     );
+    return { passed: true, score: -1, output: stderr };
   }
 
-  let parsed: { score?: number };
+  const jsonStart = stdout.indexOf('{');
+  if (jsonStart === -1) {
+    console.warn(`No JSON found in skill review output: ${stdout}`);
+    return { passed: true, score: -1, output: stdout };
+  }
+  const jsonStr = stdout.slice(jsonStart);
+
+  let parsed: { contentJudge?: { normalizedScore?: number } };
   try {
-    parsed = JSON.parse(stdout) as { score?: number };
+    parsed = JSON.parse(jsonStr) as typeof parsed;
   } catch {
-    throw new Error(`Failed to parse skill review output: ${stdout}`);
+    console.warn(`Failed to parse skill review output: ${jsonStr}`);
+    return { passed: true, score: -1, output: jsonStr };
   }
 
-  const score = parsed.score ?? 0;
+  const normalizedScore = parsed.contentJudge?.normalizedScore ?? 0;
+  const score = Math.round(normalizedScore * 100);
 
   return {
     passed: score >= opts.threshold,

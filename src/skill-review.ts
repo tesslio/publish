@@ -76,7 +76,7 @@ export async function runSkillReview(
 }
 
 export function parseThreshold(value: string | undefined): number {
-  const num = Number(value ?? '80');
+  const num = Number(value ?? '50');
   if (Number.isNaN(num) || num < 0 || num > 100) {
     throw new Error(`Invalid review threshold: ${value}. Must be 0-100`);
   }

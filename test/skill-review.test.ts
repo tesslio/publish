@@ -140,8 +140,8 @@ test('runSkillReview passes on invalid JSON output (graceful)', async () => {
 
 // --- parseThreshold ---
 
-test('parseThreshold returns default of 80', () => {
-  expect(parseThreshold(undefined)).toBe(80);
+test('parseThreshold returns default of 50', () => {
+  expect(parseThreshold(undefined)).toBe(50);
 });
 
 test('parseThreshold parses valid value', () => {

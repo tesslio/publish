@@ -8,8 +8,6 @@ import { publish } from './publish.ts';
 import {
   formatReviewResults,
   getSkillPaths,
-  optimizeSkill,
-  parseMaxIterations,
   parseThreshold,
   runSkillReview,
 } from './skill-review.ts';
@@ -76,28 +74,13 @@ async function main(): Promise<void> {
   const skillPaths = reviewEnabled ? await getSkillPaths(path) : [];
   if (skillPaths.length > 0) {
     const threshold = parseThreshold(process.env.TESSL_REVIEW_THRESHOLD);
-    const optimize = process.env.TESSL_REVIEW_OPTIMIZE === 'true';
-    const maxIterations = parseMaxIterations(
-      process.env.TESSL_REVIEW_MAX_ITERATIONS,
-    );
 
     await installTessl();
-
-    if (optimize) {
-      await Promise.all(
-        skillPaths.map((skillPath) => optimizeSkill(skillPath, maxIterations)),
-      );
-    }
 
     const results = await Promise.all(
       skillPaths.map(async (skillPath) => {
         console.log(`Reviewing skill at ${skillPath}...`);
-        const result = await runSkillReview({
-          skillPath,
-          threshold,
-          optimize: false,
-          maxIterations,
-        });
+        const result = await runSkillReview({ skillPath, threshold });
         console.log(formatReviewResults(result, threshold));
         return result;
       }),

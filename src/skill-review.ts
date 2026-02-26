@@ -29,10 +29,15 @@ export async function hasSkills(tilePath: string): Promise<boolean> {
 export async function runSkillReview(
   opts: SkillReviewOptions,
 ): Promise<SkillReviewResult> {
-  const args = ['tessl', 'skill', 'review', '--json', '--yes'];
+  const args = ['tessl', 'skill', 'review', '--json'];
 
   if (opts.optimize) {
-    args.push('--optimize', '--max-iterations', String(opts.maxIterations));
+    args.push(
+      '--yes',
+      '--optimize',
+      '--max-iterations',
+      String(opts.maxIterations),
+    );
   }
 
   args.push(opts.tilePath);

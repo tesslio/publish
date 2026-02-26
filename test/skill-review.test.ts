@@ -76,7 +76,7 @@ test('runSkillReview passes when score >= threshold', async () => {
 
   const spawnMock = Bun.spawn as ReturnType<typeof mock>;
   expect(spawnMock).toHaveBeenCalledWith(
-    ['tessl', 'skill', 'review', '--json', '--yes', '/tmp/tile'],
+    ['tessl', 'skill', 'review', '--json', '/tmp/tile'],
     expect.any(Object),
   );
 });

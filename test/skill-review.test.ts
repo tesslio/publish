@@ -5,40 +5,46 @@ import { join } from 'node:path';
 
 import {
   formatReviewResults,
-  hasSkills,
+  getSkillPaths,
   parseMaxIterations,
   parseThreshold,
   runSkillReview,
 } from '../src/skill-review.ts';
 
-// --- hasSkills ---
+// --- getSkillPaths ---
 
-test('hasSkills returns true when SKILL.md exists', async () => {
+test('getSkillPaths returns path for root SKILL.md', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'skill-test-'));
   try {
     await Bun.write(join(dir, 'SKILL.md'), '# My Skill');
-    expect(await hasSkills(dir)).toBe(true);
+    const paths = await getSkillPaths(dir);
+    expect(paths).toHaveLength(1);
+    expect(paths[0]).toBe(dir);
   } finally {
     await rm(dir, { recursive: true });
   }
 });
 
-test('hasSkills returns true for nested SKILL.md', async () => {
+test('getSkillPaths returns paths for nested SKILL.md files', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'skill-test-'));
   try {
-    const nested = join(dir, 'skills', 'my-skill');
-    await Bun.write(join(nested, 'SKILL.md'), '# Nested Skill');
-    expect(await hasSkills(dir)).toBe(true);
+    await Bun.write(join(dir, 'skills', 'a', 'SKILL.md'), '# Skill A');
+    await Bun.write(join(dir, 'skills', 'b', 'SKILL.md'), '# Skill B');
+    const paths = await getSkillPaths(dir);
+    expect(paths).toHaveLength(2);
+    expect(paths.toSorted()).toEqual(
+      [join(dir, 'skills', 'a'), join(dir, 'skills', 'b')].toSorted(),
+    );
   } finally {
     await rm(dir, { recursive: true });
   }
 });
 
-test('hasSkills returns false when no SKILL.md exists', async () => {
+test('getSkillPaths returns empty array when no SKILL.md exists', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'skill-test-'));
   try {
     await Bun.write(join(dir, 'README.md'), '# Not a skill');
-    expect(await hasSkills(dir)).toBe(false);
+    expect(await getSkillPaths(dir)).toEqual([]);
   } finally {
     await rm(dir, { recursive: true });
   }
@@ -65,7 +71,7 @@ test('runSkillReview passes when score >= threshold', async () => {
   mockSpawn(JSON.stringify({ contentJudge: { normalizedScore: 0.85 } }), '', 0);
 
   const result = await runSkillReview({
-    tilePath: '/tmp/tile',
+    skillPath: '/tmp/skill',
     threshold: 80,
     optimize: false,
     maxIterations: 3,
@@ -76,7 +82,7 @@ test('runSkillReview passes when score >= threshold', async () => {
 
   const spawnMock = Bun.spawn as ReturnType<typeof mock>;
   expect(spawnMock).toHaveBeenCalledWith(
-    ['tessl', 'skill', 'review', '--json', '/tmp/tile'],
+    ['tessl', 'skill', 'review', '--json', '/tmp/skill'],
     expect.any(Object),
   );
 });
@@ -85,7 +91,7 @@ test('runSkillReview fails when score < threshold', async () => {
   mockSpawn(JSON.stringify({ contentJudge: { normalizedScore: 0.6 } }), '', 0);
 
   const result = await runSkillReview({
-    tilePath: '/tmp/tile',
+    skillPath: '/tmp/skill',
     threshold: 80,
     optimize: false,
     maxIterations: 3,
@@ -99,7 +105,7 @@ test('runSkillReview passes --optimize and --max-iterations flags', async () => 
   mockSpawn(JSON.stringify({ contentJudge: { normalizedScore: 0.9 } }), '', 0);
 
   await runSkillReview({
-    tilePath: '/tmp/tile',
+    skillPath: '/tmp/skill',
     threshold: 80,
     optimize: true,
     maxIterations: 5,
@@ -116,7 +122,7 @@ test('runSkillReview passes --optimize and --max-iterations flags', async () => 
       '--optimize',
       '--max-iterations',
       '5',
-      '/tmp/tile',
+      '/tmp/skill',
     ],
     expect.any(Object),
   );
@@ -132,7 +138,7 @@ test('runSkillReview handles preamble text before JSON', async () => {
   );
 
   const result = await runSkillReview({
-    tilePath: '/tmp/tile',
+    skillPath: '/tmp/skill',
     threshold: 80,
     optimize: false,
     maxIterations: 3,
@@ -146,7 +152,7 @@ test('runSkillReview passes on non-zero exit code (graceful)', async () => {
   mockSpawn('', 'something went wrong', 1);
 
   const result = await runSkillReview({
-    tilePath: '/tmp/tile',
+    skillPath: '/tmp/skill',
     threshold: 80,
     optimize: false,
     maxIterations: 3,
@@ -160,7 +166,7 @@ test('runSkillReview passes on invalid JSON output (graceful)', async () => {
   mockSpawn('not json', '', 0);
 
   const result = await runSkillReview({
-    tilePath: '/tmp/tile',
+    skillPath: '/tmp/skill',
     threshold: 80,
     optimize: false,
     maxIterations: 3,

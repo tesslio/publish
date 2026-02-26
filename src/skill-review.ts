@@ -1,7 +1,8 @@
 import { Glob } from 'bun';
+import { dirname, join } from 'node:path';
 
 export interface SkillReviewOptions {
-  tilePath: string;
+  skillPath: string;
   threshold: number;
   optimize: boolean;
   maxIterations: number;
@@ -13,17 +14,18 @@ export interface SkillReviewResult {
   output: string;
 }
 
-export async function hasSkills(tilePath: string): Promise<boolean> {
+export async function getSkillPaths(tilePath: string): Promise<string[]> {
   const glob = new Glob('**/SKILL.md');
-  for await (const _ of glob.scan({
+  const paths: string[] = [];
+  for await (const match of glob.scan({
     cwd: tilePath,
     dot: false,
     followSymlinks: false,
     onlyFiles: true,
   })) {
-    return true;
+    paths.push(dirname(join(tilePath, match)));
   }
-  return false;
+  return paths;
 }
 
 export async function runSkillReview(
@@ -40,7 +42,7 @@ export async function runSkillReview(
     );
   }
 
-  args.push(opts.tilePath);
+  args.push(opts.skillPath);
 
   const proc = Bun.spawn(args, {
     stdout: 'pipe',

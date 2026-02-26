@@ -7,7 +7,7 @@ import { installTessl } from './install-tessl.ts';
 import { publish } from './publish.ts';
 import {
   formatReviewResults,
-  hasSkills,
+  getSkillPaths,
   parseMaxIterations,
   parseThreshold,
   runSkillReview,
@@ -72,7 +72,8 @@ async function main(): Promise<void> {
   );
 
   const reviewEnabled = process.env.TESSL_REVIEW === 'true';
-  if (reviewEnabled && (await hasSkills(path))) {
+  const skillPaths = reviewEnabled ? await getSkillPaths(path) : [];
+  if (skillPaths.length > 0) {
     const threshold = parseThreshold(process.env.TESSL_REVIEW_THRESHOLD);
     const optimize = process.env.TESSL_REVIEW_OPTIMIZE === 'true';
     const maxIterations = parseMaxIterations(
@@ -80,17 +81,24 @@ async function main(): Promise<void> {
     );
 
     await installTessl();
-    const result = await runSkillReview({
-      tilePath: path,
-      threshold,
-      optimize,
-      maxIterations,
-    });
-    console.log(formatReviewResults(result, threshold));
+    const results = await Promise.all(
+      skillPaths.map(async (skillPath) => {
+        console.log(`Reviewing skill at ${skillPath}...`);
+        const result = await runSkillReview({
+          skillPath,
+          threshold,
+          optimize,
+          maxIterations,
+        });
+        console.log(formatReviewResults(result, threshold));
+        return result;
+      }),
+    );
 
-    if (!result.passed) {
+    const failed = results.find((r) => !r.passed);
+    if (failed) {
       throw new Error(
-        `Skill review score ${result.score} is below threshold ${threshold}`,
+        `Skill review score ${failed.score} is below threshold ${threshold}`,
       );
     }
   }

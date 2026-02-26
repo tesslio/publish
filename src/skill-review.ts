@@ -4,8 +4,6 @@ import { dirname, join } from 'node:path';
 export interface SkillReviewOptions {
   skillPath: string;
   threshold: number;
-  optimize: boolean;
-  maxIterations: number;
 }
 
 export interface SkillReviewResult {
@@ -28,59 +26,23 @@ export async function getSkillPaths(tilePath: string): Promise<string[]> {
   return paths;
 }
 
-async function spawnTessl(
-  args: string[],
-  pipe: boolean,
-): Promise<{ stdout: string; stderr: string; exitCode: number }> {
-  const proc = Bun.spawn(args, {
-    stdout: pipe ? 'pipe' : 'inherit',
-    stderr: pipe ? 'pipe' : 'inherit',
-  });
-
-  const [stdout, stderr] = pipe
-    ? await Promise.all([
-        new Response(proc.stdout).text(),
-        new Response(proc.stderr).text(),
-      ])
-    : ['', ''];
-
-  const exitCode = await proc.exited;
-  return { stdout, stderr, exitCode };
-}
-
-export async function optimizeSkill(
-  skillPath: string,
-  maxIterations: number,
-): Promise<void> {
-  console.log(`Optimizing skill at ${skillPath}...`);
-  const { stderr, exitCode } = await spawnTessl(
-    [
-      'tessl',
-      'skill',
-      'review',
-      '--yes',
-      '--optimize',
-      '--max-iterations',
-      String(maxIterations),
-      skillPath,
-    ],
-    false,
-  );
-  if (exitCode !== 0) {
-    console.warn(
-      `tessl skill optimize failed (exit code ${exitCode}): ${stderr}`,
-    );
-  }
-}
-
 export async function runSkillReview(
   opts: SkillReviewOptions,
 ): Promise<SkillReviewResult> {
-  const { stdout, stderr, exitCode } = await spawnTessl(
+  const proc = Bun.spawn(
     ['tessl', 'skill', 'review', '--json', opts.skillPath],
-    true,
+    {
+      stdout: 'pipe',
+      stderr: 'pipe',
+    },
   );
 
+  const [stdout, stderr] = await Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+  ]);
+
+  const exitCode = await proc.exited;
   if (exitCode !== 0) {
     console.warn(
       `tessl skill review failed (exit code ${exitCode}): ${stderr}`,
@@ -121,14 +83,6 @@ export function parseThreshold(value: string | undefined): number {
   return num;
 }
 
-export function parseMaxIterations(value: string | undefined): number {
-  const num = Number(value ?? '3');
-  if (Number.isNaN(num) || num < 1 || num > 10) {
-    throw new Error(`Invalid max iterations: ${value}. Must be 1-10`);
-  }
-  return num;
-}
-
 export function formatReviewResults(
   result: SkillReviewResult,
   threshold: number,
@@ -138,5 +92,10 @@ export function formatReviewResults(
     `Skill Review: ${status}`,
     `  Score: ${result.score}/100 (threshold: ${threshold})`,
   ];
+  if (!result.passed) {
+    lines.push(
+      `  Tip: run 'tessl skill review --optimize <skill-path>' locally to improve your score`,
+    );
+  }
   return lines.join('\n');
 }

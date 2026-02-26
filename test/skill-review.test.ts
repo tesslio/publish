@@ -6,8 +6,6 @@ import { join } from 'node:path';
 import {
   formatReviewResults,
   getSkillPaths,
-  optimizeSkill,
-  parseMaxIterations,
   parseThreshold,
   runSkillReview,
 } from '../src/skill-review.ts';
@@ -74,8 +72,6 @@ test('runSkillReview passes when score >= threshold', async () => {
   const result = await runSkillReview({
     skillPath: '/tmp/skill',
     threshold: 80,
-    optimize: false,
-    maxIterations: 3,
   });
 
   expect(result.passed).toBe(true);
@@ -94,38 +90,10 @@ test('runSkillReview fails when score < threshold', async () => {
   const result = await runSkillReview({
     skillPath: '/tmp/skill',
     threshold: 80,
-    optimize: false,
-    maxIterations: 3,
   });
 
   expect(result.passed).toBe(false);
   expect(result.score).toBe(60);
-});
-
-test('optimizeSkill runs optimize command', async () => {
-  // @ts-expect-error — mocking Bun.spawn
-  Bun.spawn = mock(() => ({
-    stdout: null,
-    stderr: null,
-    exited: Promise.resolve(0),
-  }));
-
-  await optimizeSkill('/tmp/skill', 5);
-
-  const spawnMock = Bun.spawn as ReturnType<typeof mock>;
-  expect(spawnMock).toHaveBeenCalledWith(
-    [
-      'tessl',
-      'skill',
-      'review',
-      '--yes',
-      '--optimize',
-      '--max-iterations',
-      '5',
-      '/tmp/skill',
-    ],
-    expect.any(Object),
-  );
 });
 
 test('runSkillReview handles preamble text before JSON', async () => {
@@ -140,8 +108,6 @@ test('runSkillReview handles preamble text before JSON', async () => {
   const result = await runSkillReview({
     skillPath: '/tmp/skill',
     threshold: 80,
-    optimize: false,
-    maxIterations: 3,
   });
 
   expect(result.passed).toBe(true);
@@ -154,8 +120,6 @@ test('runSkillReview passes on non-zero exit code (graceful)', async () => {
   const result = await runSkillReview({
     skillPath: '/tmp/skill',
     threshold: 80,
-    optimize: false,
-    maxIterations: 3,
   });
 
   expect(result.passed).toBe(true);
@@ -168,8 +132,6 @@ test('runSkillReview passes on invalid JSON output (graceful)', async () => {
   const result = await runSkillReview({
     skillPath: '/tmp/skill',
     threshold: 80,
-    optimize: false,
-    maxIterations: 3,
   });
 
   expect(result.passed).toBe(true);
@@ -192,22 +154,6 @@ test('parseThreshold throws on invalid value', () => {
   expect(() => parseThreshold('101')).toThrow('Invalid review threshold');
 });
 
-// --- parseMaxIterations ---
-
-test('parseMaxIterations returns default of 3', () => {
-  expect(parseMaxIterations(undefined)).toBe(3);
-});
-
-test('parseMaxIterations parses valid value', () => {
-  expect(parseMaxIterations('5')).toBe(5);
-});
-
-test('parseMaxIterations throws on invalid value', () => {
-  expect(() => parseMaxIterations('abc')).toThrow('Invalid max iterations');
-  expect(() => parseMaxIterations('0')).toThrow('Invalid max iterations');
-  expect(() => parseMaxIterations('11')).toThrow('Invalid max iterations');
-});
-
 // --- formatReviewResults ---
 
 test('formatReviewResults shows PASSED for passing score', () => {
@@ -228,4 +174,5 @@ test('formatReviewResults shows FAILED for failing score', () => {
   expect(output).toContain('FAILED');
   expect(output).toContain('60/100');
   expect(output).toContain('threshold: 80');
+  expect(output).toContain('tessl skill review --optimize');
 });

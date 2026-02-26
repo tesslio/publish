@@ -11,7 +11,7 @@ inputs:
     default: 'true'
   review-threshold:
     description: 'Minimum review score (0-100) required to pass'
-    default: '80'
+    default: '50'
 runs:
   using: 'composite'
   steps:

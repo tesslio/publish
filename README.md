@@ -29,7 +29,7 @@ jobs:
           token: ${{ secrets.TESSL_API_TOKEN }}
           # path: './path/to/tile' # Optional, defaults to current directory
           # review: 'true'          # Enable skill review quality gate (default: true)
-          # review-threshold: '80'  # Minimum score 0-100 to pass (default: 80)
+          # review-threshold: '50'  # Minimum score 0-100 to pass (default: 50)
 ```
 
 ## Inputs
@@ -39,8 +39,8 @@ jobs:
 | `token`            | _(required)_ | Tessl API token for authentication              |
 | `path`             | `.`          | Path to the directory to bundle and publish     |
 | `review`           | `true`       | Enable skill review quality gate before publish |
-| `review-threshold` | `80`         | Minimum review score (0-100) required to pass   |
+| `review-threshold` | `50`         | Minimum review score (0-100) required to pass   |
 
 ## Skill Review
 
-When `review` is enabled and the tile contains skills (`SKILL.md` files), the action automatically installs the Tessl CLI and runs `tessl skill review` before publishing. If the score is below the threshold, publishing is blocked with a suggestion to run `tessl skill review --optimize` locally to improve the score. If the review step fails (e.g. CLI error), the publish proceeds normally.
+When `review` is enabled and the tile contains skills (`SKILL.md` files), the action automatically installs the Tessl CLI and runs `tessl skill review` before publishing. The default threshold of 50% checks functional validity rather than quality — skills scoring below 50% are not operationally useful, so failing the publish prevents shipping non-functional skills. If the score is below the threshold, publishing is blocked with a suggestion to run `tessl skill review --optimize` locally to improve the score. If the review step fails (e.g. CLI error), the publish proceeds normally.

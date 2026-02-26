@@ -28,33 +28,59 @@ export async function getSkillPaths(tilePath: string): Promise<string[]> {
   return paths;
 }
 
-export async function runSkillReview(
-  opts: SkillReviewOptions,
-): Promise<SkillReviewResult> {
-  const args = ['tessl', 'skill', 'review', '--json'];
+async function spawnTessl(
+  args: string[],
+  pipe: boolean,
+): Promise<{ stdout: string; stderr: string; exitCode: number }> {
+  const proc = Bun.spawn(args, {
+    stdout: pipe ? 'pipe' : 'inherit',
+    stderr: pipe ? 'pipe' : 'inherit',
+  });
 
-  if (opts.optimize) {
-    args.push(
+  const [stdout, stderr] = pipe
+    ? await Promise.all([
+        new Response(proc.stdout).text(),
+        new Response(proc.stderr).text(),
+      ])
+    : ['', ''];
+
+  const exitCode = await proc.exited;
+  return { stdout, stderr, exitCode };
+}
+
+export async function optimizeSkill(
+  skillPath: string,
+  maxIterations: number,
+): Promise<void> {
+  console.log(`Optimizing skill at ${skillPath}...`);
+  const { stderr, exitCode } = await spawnTessl(
+    [
+      'tessl',
+      'skill',
+      'review',
       '--yes',
       '--optimize',
       '--max-iterations',
-      String(opts.maxIterations),
+      String(maxIterations),
+      skillPath,
+    ],
+    false,
+  );
+  if (exitCode !== 0) {
+    console.warn(
+      `tessl skill optimize failed (exit code ${exitCode}): ${stderr}`,
     );
   }
+}
 
-  args.push(opts.skillPath);
+export async function runSkillReview(
+  opts: SkillReviewOptions,
+): Promise<SkillReviewResult> {
+  const { stdout, stderr, exitCode } = await spawnTessl(
+    ['tessl', 'skill', 'review', '--json', opts.skillPath],
+    true,
+  );
 
-  const proc = Bun.spawn(args, {
-    stdout: 'pipe',
-    stderr: 'pipe',
-  });
-
-  const [stdout, stderr] = await Promise.all([
-    new Response(proc.stdout).text(),
-    new Response(proc.stderr).text(),
-  ]);
-
-  const exitCode = await proc.exited;
   if (exitCode !== 0) {
     console.warn(
       `tessl skill review failed (exit code ${exitCode}): ${stderr}`,

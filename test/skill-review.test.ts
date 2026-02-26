@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import {
   formatReviewResults,
   getSkillPaths,
+  optimizeSkill,
   parseMaxIterations,
   parseThreshold,
   runSkillReview,
@@ -101,15 +102,15 @@ test('runSkillReview fails when score < threshold', async () => {
   expect(result.score).toBe(60);
 });
 
-test('runSkillReview passes --optimize and --max-iterations flags', async () => {
-  mockSpawn(JSON.stringify({ contentJudge: { normalizedScore: 0.9 } }), '', 0);
+test('optimizeSkill runs optimize command', async () => {
+  // @ts-expect-error — mocking Bun.spawn
+  Bun.spawn = mock(() => ({
+    stdout: null,
+    stderr: null,
+    exited: Promise.resolve(0),
+  }));
 
-  await runSkillReview({
-    skillPath: '/tmp/skill',
-    threshold: 80,
-    optimize: true,
-    maxIterations: 5,
-  });
+  await optimizeSkill('/tmp/skill', 5);
 
   const spawnMock = Bun.spawn as ReturnType<typeof mock>;
   expect(spawnMock).toHaveBeenCalledWith(
@@ -117,7 +118,6 @@ test('runSkillReview passes --optimize and --max-iterations flags', async () => 
       'tessl',
       'skill',
       'review',
-      '--json',
       '--yes',
       '--optimize',
       '--max-iterations',

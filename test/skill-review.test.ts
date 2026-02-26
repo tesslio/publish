@@ -62,7 +62,7 @@ function mockSpawn(stdout: string, stderr: string, exitCode: number) {
 }
 
 test('runSkillReview passes when score >= threshold', async () => {
-  mockSpawn(JSON.stringify({ score: 85 }), '', 0);
+  mockSpawn(JSON.stringify({ contentJudge: { normalizedScore: 0.85 } }), '', 0);
 
   const result = await runSkillReview({
     tilePath: '/tmp/tile',
@@ -82,7 +82,7 @@ test('runSkillReview passes when score >= threshold', async () => {
 });
 
 test('runSkillReview fails when score < threshold', async () => {
-  mockSpawn(JSON.stringify({ score: 60 }), '', 0);
+  mockSpawn(JSON.stringify({ contentJudge: { normalizedScore: 0.6 } }), '', 0);
 
   const result = await runSkillReview({
     tilePath: '/tmp/tile',
@@ -96,7 +96,7 @@ test('runSkillReview fails when score < threshold', async () => {
 });
 
 test('runSkillReview passes --optimize and --max-iterations flags', async () => {
-  mockSpawn(JSON.stringify({ score: 90 }), '', 0);
+  mockSpawn(JSON.stringify({ contentJudge: { normalizedScore: 0.9 } }), '', 0);
 
   await runSkillReview({
     tilePath: '/tmp/tile',
@@ -122,30 +122,52 @@ test('runSkillReview passes --optimize and --max-iterations flags', async () => 
   );
 });
 
-test('runSkillReview throws on non-zero exit code', async () => {
-  mockSpawn('', 'something went wrong', 1);
+test('runSkillReview handles preamble text before JSON', async () => {
+  const preamble =
+    'By using Tessl, you agree to our Terms: https://tessl.io/policies/terms\n\n';
+  mockSpawn(
+    preamble + JSON.stringify({ contentJudge: { normalizedScore: 0.95 } }),
+    '',
+    0,
+  );
 
-  await expect(
-    runSkillReview({
-      tilePath: '/tmp/tile',
-      threshold: 80,
-      optimize: false,
-      maxIterations: 3,
-    }),
-  ).rejects.toThrow('tessl skill review failed (exit code 1)');
+  const result = await runSkillReview({
+    tilePath: '/tmp/tile',
+    threshold: 80,
+    optimize: false,
+    maxIterations: 3,
+  });
+
+  expect(result.passed).toBe(true);
+  expect(result.score).toBe(95);
 });
 
-test('runSkillReview throws on invalid JSON output', async () => {
+test('runSkillReview passes on non-zero exit code (graceful)', async () => {
+  mockSpawn('', 'something went wrong', 1);
+
+  const result = await runSkillReview({
+    tilePath: '/tmp/tile',
+    threshold: 80,
+    optimize: false,
+    maxIterations: 3,
+  });
+
+  expect(result.passed).toBe(true);
+  expect(result.score).toBe(-1);
+});
+
+test('runSkillReview passes on invalid JSON output (graceful)', async () => {
   mockSpawn('not json', '', 0);
 
-  await expect(
-    runSkillReview({
-      tilePath: '/tmp/tile',
-      threshold: 80,
-      optimize: false,
-      maxIterations: 3,
-    }),
-  ).rejects.toThrow('Failed to parse skill review output');
+  const result = await runSkillReview({
+    tilePath: '/tmp/tile',
+    threshold: 80,
+    optimize: false,
+    maxIterations: 3,
+  });
+
+  expect(result.passed).toBe(true);
+  expect(result.score).toBe(-1);
 });
 
 // --- parseThreshold ---

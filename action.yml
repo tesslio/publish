@@ -1,5 +1,8 @@
 name: 'Tessl Publish'
 description: 'Publish tiles to Tessl API'
+branding:
+  icon: package
+  color: blue
 inputs:
   path:
     description: 'Path to the directory to bundle and publish'

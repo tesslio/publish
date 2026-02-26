@@ -3,7 +3,15 @@ import { join } from 'node:path';
 
 import { createArchive } from './archive.ts';
 import { isPublishedVersion } from './check-version.ts';
+import { installTessl } from './install-tessl.ts';
 import { publish } from './publish.ts';
+import {
+  formatReviewResults,
+  hasSkills,
+  parseMaxIterations,
+  parseThreshold,
+  runSkillReview,
+} from './skill-review.ts';
 
 async function main(): Promise<void> {
   const path = process.argv[2] || '.';
@@ -62,6 +70,30 @@ async function main(): Promise<void> {
   console.log(
     `Publishing tile '${tileFullName}@${tileVersion}' from path '${path}'`,
   );
+
+  const reviewEnabled = process.env.TESSL_REVIEW === 'true';
+  if (reviewEnabled && (await hasSkills(path))) {
+    const threshold = parseThreshold(process.env.TESSL_REVIEW_THRESHOLD);
+    const optimize = process.env.TESSL_REVIEW_OPTIMIZE === 'true';
+    const maxIterations = parseMaxIterations(
+      process.env.TESSL_REVIEW_MAX_ITERATIONS,
+    );
+
+    await installTessl();
+    const result = await runSkillReview({
+      tilePath: path,
+      threshold,
+      optimize,
+      maxIterations,
+    });
+    console.log(formatReviewResults(result, threshold));
+
+    if (!result.passed) {
+      throw new Error(
+        `Skill review score ${result.score} is below threshold ${threshold}`,
+      );
+    }
+  }
 
   console.log(`Creating archive...`);
   const archiveBytes = await createArchive(path);

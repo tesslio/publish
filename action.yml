@@ -6,6 +6,18 @@ inputs:
   token:
     description: 'Tessl API token for authentication'
     required: true
+  review:
+    description: 'Enable skill review quality gate before publish'
+    default: 'true'
+  review-threshold:
+    description: 'Minimum review score (0-100) required to pass'
+    default: '80'
+  review-optimize:
+    description: 'Automatically improve skill files before publish'
+    default: 'false'
+  review-max-iterations:
+    description: 'Maximum optimization iterations (1-10)'
+    default: '3'
 runs:
   using: 'composite'
   steps:
@@ -17,3 +29,7 @@ runs:
       shell: bash
       env:
         TESSL_API_TOKEN: ${{ inputs.token }}
+        TESSL_REVIEW: ${{ inputs.review }}
+        TESSL_REVIEW_THRESHOLD: ${{ inputs.review-threshold }}
+        TESSL_REVIEW_OPTIMIZE: ${{ inputs.review-optimize }}
+        TESSL_REVIEW_MAX_ITERATIONS: ${{ inputs.review-max-iterations }}

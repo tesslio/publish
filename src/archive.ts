@@ -11,6 +11,7 @@ export async function createArchive(path: string): Promise<Uint8Array> {
     followSymlinks: false,
     onlyFiles: true,
   })) {
+    if (filePath.startsWith("evals/")) continue;
     const file = Bun.file(join(path, filePath));
     files[filePath] = await file.bytes();
   }

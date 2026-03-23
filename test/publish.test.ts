@@ -42,13 +42,11 @@ test('publish throws on non-ok response', async () => {
     http.post('https://api.tessl.io/v1/tiles', () => {
       return HttpResponse.json(
         {
-          errors: [
-            {
-              title: 'Bad Request',
-              status: '400',
-              detail: 'Invalid archive',
-            },
-          ],
+          error: {
+            title: 'Bad Request',
+            status: 400,
+            message: 'Invalid archive',
+          },
         },
         { status: 400 },
       );

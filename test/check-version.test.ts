@@ -154,13 +154,11 @@ describe('isPublishedVersion', () => {
       http.get(versionsUrl('my-workspace', 'my-tile'), () =>
         HttpResponse.json(
           {
-            errors: [
-              {
-                title: 'Internal Server Error',
-                status: '500',
-                detail: 'Something went wrong',
-              },
-            ],
+            error: {
+              title: 'Internal Server Error',
+              status: 500,
+              message: 'Something went wrong',
+            },
           },
           { status: 500 },
         ),

@@ -1,3 +1,7 @@
+> [!CAUTION]
+> **This action is deprecated.** Use
+> [`tesslio/setup-tessl`](https://github.com/tesslio/setup-tessl) instead.
+
 # tesslio/publish
 
 A github action that publishes a Tessl tile
